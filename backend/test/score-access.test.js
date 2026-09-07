@@ -132,7 +132,7 @@ describe("GET /score/:rut", () => {
     const body = await response.json();
 
     assert.equal(response.status, 200);
-    assert.equal(body.rut, "12345678-5");
+    assert.equal(body.rut, "12.345.678-5");
   });
 
   test("returns 401 for a non-Bearer scheme", async () => {
@@ -199,7 +199,7 @@ describe("GET /score/:rut", () => {
     const body = await response.json();
 
     assert.equal(response.status, 200);
-    assert.equal(body.rut, "99999999-9");
+    assert.equal(body.rut, "99.999.999-9");
     assert.equal(Number.isInteger(body.score), true);
     assert.ok(body.score >= 0 && body.score <= 100);
     assert.equal(Number.isNaN(Date.parse(body.fecha)), false);
@@ -214,7 +214,7 @@ describe("GET /score/:rut", () => {
     const body = await response.json();
 
     assert.equal(response.status, 200);
-    assert.equal(body.rut, "12345678-5");
+    assert.equal(body.rut, "12.345.678-5");
     assert.ok(body.score >= 0 && body.score <= 100);
     assert.equal(Number.isNaN(Date.parse(body.fecha)), false);
   });
@@ -228,7 +228,7 @@ describe("GET /score/:rut", () => {
     const body = await response.json();
 
     assert.equal(response.status, 200);
-    assert.equal(body.rut, "12345678-5");
+    assert.equal(body.rut, "12.345.678-5");
   });
 
   test("returns 403 when a user queries another RUT", async () => {
@@ -243,16 +243,20 @@ describe("GET /score/:rut", () => {
     assert.deepEqual(body, { error: "Forbidden" });
   });
 
-  test("keeps the same score for the same RUT across requests", async () => {
+  test("keeps the same score and display RUT for equivalent formats", async () => {
     const { token } = await postLogin({
       username: "admin",
       password: "adminpass",
     });
     const first = await (await getScore("12345678-5", token)).json();
     const second = await (await getScore("12.345.678-5", token)).json();
+    const third = await (await getScore("123456785", token)).json();
 
     assert.equal(first.score, second.score);
-    assert.equal(first.rut, second.rut);
+    assert.equal(second.score, third.score);
+    assert.equal(first.rut, "12.345.678-5");
+    assert.equal(second.rut, "12.345.678-5");
+    assert.equal(third.rut, "12.345.678-5");
   });
 
   test("returns 400 for an invalid RUT", async () => {

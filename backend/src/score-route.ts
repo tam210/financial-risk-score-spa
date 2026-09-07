@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import { readPrincipal } from "./auth-middleware";
 import { generateScore } from "./score";
-import { isPlausibleRut, normalizeRut } from "./rut";
+import { isPlausibleRut, normalizeRut, formatRut } from "./rut";
 
 function canAccessRut(
   principal: { role: "admin" } | { role: "user"; rut: string },
@@ -34,11 +34,11 @@ export function handleGetScore(req: Request, res: Response): void {
     return;
   }
 
-  const rut = normalizeRut(requestedRut);
+  const identityRut = normalizeRut(requestedRut);
 
   res.status(200).json({
-    rut,
-    score: generateScore(rut),
+    rut: formatRut(identityRut),
+    score: generateScore(identityRut),
     fecha: new Date().toISOString(),
   });
 }

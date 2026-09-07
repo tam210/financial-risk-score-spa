@@ -8,6 +8,19 @@ export function normalizeRut(rut: string): string {
   return `${compact.slice(0, -1)}-${compact.slice(-1)}`;
 }
 
+export function formatRut(rut: string): string {
+  const normalized = normalizeRut(rut);
+
+  if (normalized.length < 2 || !normalized.includes("-")) {
+    return normalized;
+  }
+
+  const [body, verifier] = normalized.split("-");
+  const withDots = body.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+
+  return `${withDots}-${verifier}`;
+}
+
 function hasChileanThousandGrouping(body: string): boolean {
   if (!body.includes(".")) {
     return false;
