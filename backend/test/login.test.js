@@ -97,6 +97,17 @@ describe("POST /login", () => {
     assert.deepEqual(body, { error: "Invalid request" });
   });
 
+  test("returns 400 for an oversized username", async () => {
+    const response = await postLogin({
+      username: "a".repeat(65),
+      password: "adminpass",
+    });
+    const body = await response.json();
+
+    assert.equal(response.status, 400);
+    assert.deepEqual(body, { error: "Invalid request" });
+  });
+
   test("returns 400 JSON without HTML or stack for malformed JSON", async () => {
     const response = await postLogin(undefined, '{"username":');
     const contentType = response.headers.get("content-type") ?? "";
@@ -107,6 +118,22 @@ describe("POST /login", () => {
     assert.deepEqual(JSON.parse(text), { error: "Invalid request" });
     assert.doesNotMatch(text, /<html/i);
     assert.doesNotMatch(text, /SyntaxError/);
+    assert.doesNotMatch(text, /node_modules/);
+  });
+
+  test("returns 413 JSON without HTML or stack for an oversized body", async () => {
+    const response = await postLogin(undefined, JSON.stringify({
+      username: "admin",
+      password: "a".repeat(20 * 1024),
+    }));
+    const contentType = response.headers.get("content-type") ?? "";
+    const text = await response.text();
+
+    assert.equal(response.status, 413);
+    assert.match(contentType, /application\/json/);
+    assert.deepEqual(JSON.parse(text), { error: "Invalid request" });
+    assert.doesNotMatch(text, /<html/i);
+    assert.doesNotMatch(text, /PayloadTooLargeError/);
     assert.doesNotMatch(text, /node_modules/);
   });
 });
@@ -131,16 +158,17 @@ describe("JWT issued by POST /login", () => {
     assert.equal(admin.payload.exp - admin.payload.iat, 900);
     assert.equal(user.payload.exp - user.payload.iat, 900);
 
+    assert.equal(admin.payload.sub, "admin-1");
     assert.equal(admin.payload.role, "admin");
     assert.equal("rut" in admin.payload, false);
 
+    assert.equal(user.payload.sub, "user-1");
     assert.equal(user.payload.role, "user");
     assert.equal(user.payload.rut, "12345678-5");
 
     for (const payload of [admin.payload, user.payload]) {
       assert.equal("username" in payload, false);
       assert.equal("password" in payload, false);
-      assert.equal("sub" in payload, false);
     }
   });
 });

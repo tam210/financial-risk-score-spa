@@ -1,26 +1,15 @@
 import type { Request, Response } from "express";
 import jwt from "jsonwebtoken";
+import { JWT_ALGORITHM, getJwtSecret } from "./jwt-secret";
 import { authenticate, type AuthenticatedAccount } from "./mock-users";
 
-const JWT_ALGORITHM = "HS256" as const;
 const JWT_EXPIRES_IN_SECONDS = 900;
-const MIN_JWT_SECRET_BYTES = 32;
+const MAX_USERNAME_LENGTH = 64;
+const MAX_PASSWORD_LENGTH = 128;
 
 type AccessTokenPayload =
-  | { role: "admin" }
-  | { role: "user"; rut: string };
-
-function getJwtSecret(): string {
-  const secret = process.env.JWT_SECRET;
-
-  if (!secret || Buffer.byteLength(secret, "utf8") < MIN_JWT_SECRET_BYTES) {
-    throw new Error(
-      `JWT_SECRET is required and must be at least ${MIN_JWT_SECRET_BYTES} UTF-8 bytes`,
-    );
-  }
-
-  return secret;
-}
+  | { sub: string; role: "admin" }
+  | { sub: string; role: "user"; rut: string };
 
 const jwtSecret = getJwtSecret();
 
@@ -28,10 +17,10 @@ function buildAccessTokenPayload(
   account: AuthenticatedAccount,
 ): AccessTokenPayload {
   if (account.role === "admin") {
-    return { role: "admin" };
+    return { sub: account.id, role: "admin" };
   }
 
-  return { role: "user", rut: account.rut };
+  return { sub: account.id, role: "user", rut: account.rut };
 }
 
 function readLoginCredentials(
@@ -51,11 +40,21 @@ function readLoginCredentials(
     return null;
   }
 
+  const trimmedUsername = username.trim();
+
+  if (trimmedUsername.length > MAX_USERNAME_LENGTH) {
+    return null;
+  }
+
   if (typeof password !== "string" || password.length === 0) {
     return null;
   }
 
-  return { username: username.trim(), password };
+  if (password.length > MAX_PASSWORD_LENGTH) {
+    return null;
+  }
+
+  return { username: trimmedUsername, password };
 }
 
 export function handleLogin(req: Request, res: Response): void {

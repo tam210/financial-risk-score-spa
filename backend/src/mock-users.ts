@@ -1,12 +1,14 @@
 export type Role = "admin" | "user";
 
 type MockAdmin = {
+  id: string;
   username: string;
   password: string;
   role: "admin";
 };
 
 type MockUser = {
+  id: string;
   username: string;
   password: string;
   role: "user";
@@ -16,16 +18,18 @@ type MockUser = {
 type MockAccount = MockAdmin | MockUser;
 
 export type AuthenticatedAccount =
-  | { username: string; role: "admin" }
-  | { username: string; role: "user"; rut: string };
+  | { id: string; username: string; role: "admin" }
+  | { id: string; username: string; role: "user"; rut: string };
 
 const MOCK_ACCOUNTS: readonly MockAccount[] = [
   {
+    id: "admin-1",
     username: "admin",
     password: "adminpass",
     role: "admin",
   },
   {
+    id: "user-1",
     username: "user",
     password: "userpass",
     role: "user",
@@ -47,10 +51,15 @@ export function authenticate(
   }
 
   if (account.role === "admin") {
-    return { username: account.username, role: account.role };
+    return {
+      id: account.id,
+      username: account.username,
+      role: account.role,
+    };
   }
 
   return {
+    id: account.id,
     username: account.username,
     role: account.role,
     rut: account.rut,
