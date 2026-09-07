@@ -3,8 +3,32 @@
 const { describe, test } = require("node:test");
 const assert = require("node:assert/strict");
 
-const { normalizeRut } = require("../dist/rut");
+const { isPlausibleRut, normalizeRut } = require("../dist/rut");
 const { generateScore } = require("../dist/score");
+
+describe("isPlausibleRut", () => {
+  test("accepts compact, hyphenated, and Chilean-grouped formats", () => {
+    assert.equal(isPlausibleRut("12345678-5"), true);
+    assert.equal(isPlausibleRut("123456785"), true);
+    assert.equal(isPlausibleRut("12.345.678-5"), true);
+    assert.equal(isPlausibleRut("12345678-K"), true);
+    assert.equal(isPlausibleRut("12.345.678-k"), true);
+    assert.equal(isPlausibleRut("  12.345.678-5  "), true);
+  });
+
+  test("rejects malformed punctuation and oversized bodies", () => {
+    assert.equal(isPlausibleRut("1.2.3.4.5.6.7.8.5"), false);
+    assert.equal(isPlausibleRut("12..345.678-5"), false);
+    assert.equal(isPlausibleRut("12.345-678-5"), false);
+    assert.equal(isPlausibleRut("12345678--5"), false);
+    assert.equal(isPlausibleRut("12.345.678--5"), false);
+    assert.equal(isPlausibleRut("123456789-5"), false);
+    assert.equal(isPlausibleRut("12345678901"), false);
+    assert.equal(isPlausibleRut("foo"), false);
+    assert.equal(isPlausibleRut(""), false);
+    assert.equal(isPlausibleRut("9"), false);
+  });
+});
 
 describe("normalizeRut", () => {
   test("produces a consistent representation for equivalent formats", () => {

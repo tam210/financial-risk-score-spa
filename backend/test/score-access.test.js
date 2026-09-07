@@ -232,4 +232,16 @@ describe("GET /score/:rut", () => {
     assert.equal(response.status, 400);
     assert.deepEqual(body, { error: "Invalid request" });
   });
+
+  test("returns 400 for a malformed dotted RUT instead of repairing it", async () => {
+    const { token } = await postLogin({
+      username: "user",
+      password: "userpass",
+    });
+    const response = await getScore("1.2.3.4.5.6.7.8.5", token);
+    const body = await response.json();
+
+    assert.equal(response.status, 400);
+    assert.deepEqual(body, { error: "Invalid request" });
+  });
 });
