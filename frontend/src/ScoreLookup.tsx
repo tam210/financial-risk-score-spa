@@ -29,11 +29,37 @@ function formatConsultationDate(iso: string): string {
   }).format(date);
 }
 
+function formatRutInput(value: string): string {
+  const cleaned = value.toUpperCase().replace(/[^0-9K]/g, "");
+  const endsWithK = cleaned.endsWith("K");
+  const digits = cleaned.replace(/K/g, "");
+
+  let compact = endsWithK ? `${digits.slice(0, 8)}K` : digits.slice(0, 9);
+
+  if (compact.length === 0) {
+    return "";
+  }
+
+  if (compact.length === 1) {
+    return compact;
+  }
+
+  const body = compact.slice(0, -1);
+  const verifier = compact.slice(-1);
+  const withDots = body.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+
+  return `${withDots}-${verifier}`;
+}
+
 export function ScoreLookup({ token, onUnauthorized }: ScoreLookupProps) {
   const [rut, setRut] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ScoreRecord | null>(null);
+
+  function handleRutChange(value: string) {
+    setRut(formatRutInput(value));
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -85,8 +111,9 @@ export function ScoreLookup({ token, onUnauthorized }: ScoreLookupProps) {
               autoComplete="off"
               spellCheck={false}
               placeholder="12.345.678-9"
+              maxLength={12}
               value={rut}
-              onChange={(event) => setRut(event.target.value)}
+              onChange={(event) => handleRutChange(event.target.value)}
               disabled={isSubmitting}
               required
             />
