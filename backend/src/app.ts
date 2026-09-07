@@ -24,9 +24,32 @@ app.use(express.json({ limit: "16kb" }));
 app.post("/login", handleLogin);
 app.get("/score/:rut", requireAuth, handleGetScore);
 
+function readErrorStatus(err: unknown): number | null {
+  if (err === null || typeof err !== "object") {
+    return null;
+  }
+
+  if ("status" in err && typeof err.status === "number") {
+    return err.status;
+  }
+
+  if ("statusCode" in err && typeof err.statusCode === "number") {
+    return err.statusCode;
+  }
+
+  return null;
+}
+
 app.use(
   (err: unknown, _req: Request, res: Response, _next: NextFunction): void => {
-    if (err instanceof SyntaxError && "status" in err && err.status === 400) {
+    const status = readErrorStatus(err);
+
+    if (status === 413) {
+      res.status(413).json({ error: "Invalid request" });
+      return;
+    }
+
+    if (err instanceof SyntaxError && status === 400) {
       res.status(400).json({ error: "Invalid request" });
       return;
     }

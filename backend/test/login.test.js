@@ -109,6 +109,22 @@ describe("POST /login", () => {
     assert.doesNotMatch(text, /SyntaxError/);
     assert.doesNotMatch(text, /node_modules/);
   });
+
+  test("returns 413 JSON without HTML or stack for an oversized body", async () => {
+    const response = await postLogin(undefined, JSON.stringify({
+      username: "admin",
+      password: "a".repeat(20 * 1024),
+    }));
+    const contentType = response.headers.get("content-type") ?? "";
+    const text = await response.text();
+
+    assert.equal(response.status, 413);
+    assert.match(contentType, /application\/json/);
+    assert.deepEqual(JSON.parse(text), { error: "Invalid request" });
+    assert.doesNotMatch(text, /<html/i);
+    assert.doesNotMatch(text, /PayloadTooLargeError/);
+    assert.doesNotMatch(text, /node_modules/);
+  });
 });
 
 describe("JWT issued by POST /login", () => {
