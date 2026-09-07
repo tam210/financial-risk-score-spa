@@ -1,97 +1,43 @@
 # Financial Risk Score
 
-MVP de consulta de riesgo financiero desarrollado como parte del challenge técnico.
+MVP de consulta de riesgo financiero (challenge técnico): API Node.js + TypeScript + Express y SPA React + TypeScript.
 
-La aplicación permite autenticarse y consultar un score simulado a partir de un RUT chileno. El acceso está controlado por roles: un administrador puede consultar cualquier RUT, mientras que un usuario solo puede consultar el asociado a su cuenta.
-
-El proyecto está dividido en una API REST construida con Node.js, TypeScript y Express, y una SPA en React + TypeScript.
+Login con JWT y consulta de score por RUT. `admin` puede consultar cualquier RUT; `user` solo el suyo.
 
 ## Stack
 
-- **Backend:** Node.js 24, TypeScript, Express, JSON Web Tokens, Helmet y CORS
-- **Frontend:** React, TypeScript y Vite
-- **Testing:** test runner nativo de Node.js
+- **Backend:** Node.js 24, TypeScript, Express, JWT (HS256), Helmet, CORS
+- **Frontend:** React, TypeScript, Vite
+- **Tests:** runner nativo de Node (`node --test`)
 
 ## Requisitos
 
-- Node.js 24.20.0
+- Node.js 24.20.0 (`nvm use` si usas el `.nvmrc`)
 - npm
 
-El repositorio incluye un `.nvmrc`, por lo que con `nvm` puedes utilizar directamente la versión esperada:
+## Cómo ejecutar
 
-```bash
-nvm use
-```
+La API **no carga** un archivo `.env`. Hay que pasar las variables en el comando (o hacer `source` de un `.env` exportado). El frontend sí lee `frontend/.env` vía Vite.
 
-## Configuración
-
-El proyecto utiliza variables de entorno tanto para la API como para la SPA.
-
-En la raíz del repositorio se encuentra `.env.example`, con las variables necesarias para el backend:
-
-| Variable | Descripción |
-| --- | --- |
-| `PORT` | Puerto en el que se ejecutará la API |
-| `FRONTEND_ORIGIN` | Origen permitido por CORS |
-| `JWT_SECRET` | Secret utilizado para firmar y verificar los JWT |
-
-El `JWT_SECRET` debe tener al menos 32 bytes. El valor incluido en `.env.example` es solamente un placeholder y debe reemplazarse al ejecutar la aplicación.
-
-El frontend utiliza:
-
-```text
-VITE_API_URL
-```
-
-Puedes configurarlo copiando su archivo de ejemplo:
-
-```bash
-cd frontend
-cp .env.example .env
-```
-
-Para desarrollo local, los valores esperados son:
-
-```env
-VITE_API_URL=http://localhost:3000
-```
-
-y:
-
-```text
-FRONTEND_ORIGIN=http://localhost:5173
-```
-
-## Ejecución local
-
-### Backend
-
-Desde la raíz del repositorio:
+### 1. Backend
 
 ```bash
 cd backend
 npm install
 npm run build
-```
-
-Luego inicia la API proporcionando las variables de entorno:
-
-```bash
 PORT=3000 \
 FRONTEND_ORIGIN=http://localhost:5173 \
-JWT_SECRET='local-development-secret-al-menos-32-bytes' \
+JWT_SECRET='local-dev-only-placeholder-32chars-min' \
 npm start
 ```
 
-La API quedará disponible en:
+API: `http://localhost:3000`
 
-```text
-http://localhost:3000
-```
+`JWT_SECRET` debe tener **≥ 32 bytes**. El valor `replace-me` de `.env.example` es corto a propósito y no sirve para arrancar.
 
-### Frontend
+`FRONTEND_ORIGIN` debe coincidir **exactamente** con la URL de la SPA (`http://localhost:5173`, no `127.0.0.1`).
 
-En otra terminal:
+### 2. Frontend (otra terminal)
 
 ```bash
 cd frontend
@@ -100,73 +46,56 @@ npm install
 npm run dev
 ```
 
-La SPA quedará disponible en:
+SPA: **`http://localhost:5173`** (usa `localhost`, no `127.0.0.1`).
 
-```text
-http://localhost:5173
+### Variables
+
+| Variable | Dónde | Para qué |
+| --- | --- | --- |
+| `PORT` | API | Puerto (ej. `3000`) |
+| `FRONTEND_ORIGIN` | API | Origen CORS allowlist |
+| `JWT_SECRET` | API | Firma/verificación JWT (≥ 32 bytes) |
+| `VITE_API_URL` | SPA (`frontend/.env`) | Base URL de la API |
+
+Referencias: `.env.example` (raíz) y `frontend/.env.example`.
+
+### Tests
+
+```bash
+cd backend
+npm test
 ```
 
-## Credenciales de prueba
-
-La autenticación utiliza cuentas mock, tal como se solicita para el MVP.
+## Credenciales mock
 
 | Rol | Usuario | Contraseña | RUT |
 | --- | --- | --- | --- |
 | Admin | `admin` | `adminpass` | — |
 | User | `user` | `userpass` | `12345678-5` |
 
-El administrador puede consultar cualquier RUT.
-
-El usuario puede consultar únicamente su propio RUT. La comparación se realiza sobre una representación normalizada, por lo que, por ejemplo, `12.345.678-5` y `12345678-5` se consideran la misma identidad.
+Admin: cualquier RUT. User: solo el suyo (`12.345.678-5` ≡ `12345678-5`).
 
 ## API
 
-### Login
-
-```http
-POST /login
-Content-Type: application/json
-```
-
-Ejemplo:
+### `POST /login`
 
 ```json
-{
-  "username": "user",
-  "password": "userpass"
-}
+{ "username": "user", "password": "userpass" }
 ```
-
-Respuesta:
 
 ```json
-{
-  "token": "<jwt>"
-}
+{ "token": "<jwt>" }
 ```
 
-El token contiene el rol del usuario y, para cuentas con rol `user`, su RUT. Los access tokens expiran después de 15 minutos.
+JWT: `sub`, `role`, y `rut` solo si `role = user`. Expira en 15 minutos. Sin `username`/`password` en el token.
 
-Posibles respuestas:
+- `400` body inválido · `401` credenciales incorrectas
 
-- `400` — request inválido
-- `401` — credenciales incorrectas
-
-### Consultar score
+### `GET /score/:rut`
 
 ```http
-GET /score/:rut
 Authorization: Bearer <token>
 ```
-
-Ejemplo:
-
-```http
-GET /score/12345678-5
-Authorization: Bearer <token>
-```
-
-Respuesta:
 
 ```json
 {
@@ -176,83 +105,16 @@ Respuesta:
 }
 ```
 
-El score es un entero entre `0` y `100`. Su generación es determinista: un mismo RUT normalizado siempre produce el mismo score.
+`score` 0–100, determinista por RUT normalizado. `rut` en la respuesta siempre en formato chileno legible. `fecha` = momento de la consulta (ISO).
 
-`fecha` corresponde al momento en que se realizó la consulta y no interviene en el cálculo.
+- `400` RUT inválido · `401` token inválido/expirado · `403` sin permiso para ese RUT
 
-Posibles respuestas:
+Authz solo en backend. La SPA guarda el token **en memoria** (reload → login de nuevo).
 
-- `400` — RUT con una estructura no válida
-- `401` — token ausente, inválido o expirado
-- `403` — usuario autenticado sin autorización para consultar ese RUT
+## Alcance
 
-## Autenticación y autorización
-
-La autenticación y la autorización se resuelven completamente en el backend.
-
-Los JWT se verifican antes de acceder al recurso, incluyendo firma, algoritmo permitido, expiración y estructura de los claims.
-
-Una vez autenticada la request:
-
-- `admin` puede consultar cualquier RUT.
-- `user` solo puede consultar el RUT asociado a su token.
-
-La SPA no decodifica el JWT para tomar decisiones de autorización. Simplemente envía el access token en cada consulta y reacciona al resultado entregado por la API.
-
-En el frontend el token se mantiene únicamente en memoria. No se utiliza `localStorage`, `sessionStorage` ni cookies, por lo que una recarga completa de la página requiere iniciar sesión nuevamente.
-
-## Score determinista
-
-El score utilizado en este MVP es una simulación.
-
-Primero se normaliza el RUT para que distintas representaciones de una misma identidad tengan el mismo resultado. A partir de ese valor se genera un hash SHA-256 y se obtiene un número dentro del rango `0–100`.
-
-Esto permite cumplir la propiedad requerida por el challenge:
-
-```text
-mismo RUT → mismo score
-```
-
-sin introducir persistencia ni una fuente de datos externa.
-
-El valor no representa un modelo de evaluación crediticia real y, por la misma razón, la interfaz no asigna categorías como riesgo alto, medio o bajo.
-
-## Tests
-
-Los tests del backend se ejecutan con el test runner incluido en Node.js.
-
-```bash
-cd backend
-npm test
-```
-
-El comando compila primero el proyecto y posteriormente ejecuta la suite.
-
-La cobertura se concentra especialmente en los comportamientos sensibles del flujo:
-
-- login y credenciales;
-- contenido y expiración de JWT;
-- tokens inválidos;
-- autorización por rol y RUT;
-- diferencias entre `401` y `403`;
-- normalización de RUT;
-- generación determinista del score;
-- acceso protegido a `GET /score/:rut`.
-
-El frontend se validó mediante TypeScript, build de producción y pruebas manuales del flujo completo en navegador.
-
-## Decisiones de alcance
-
-El objetivo fue mantener la solución pequeña y fácil de revisar, respetando el alcance de un MVP y el tiempo definido para el challenge.
-
-Por eso no se agregó base de datos, refresh tokens, un proveedor externo de identidad ni un modelo crediticio real. Las credenciales son mock y el score se genera localmente.
-
-La estructura permite que esas piezas puedan reemplazarse posteriormente sin cambiar el contrato principal de la aplicación.
+MVP del challenge: mocks, score simulado (no modelo crediticio), sin DB ni refresh tokens.
 
 ## Uso de IA
 
-Durante el desarrollo utilicé **Cursor y ChatGPT como herramientas de apoyo**.
-
-Principalmente los usé para contrastar algunas alternativas de implementación, revisar consideraciones de seguridad, pensar casos de prueba y pulir detalles de la interfaz y de la documentación.
-
-Las sugerencias se fueron revisando antes de incorporarlas y las decisiones finales se tomaron en función del alcance y los requisitos del challenge.
+Usé **Cursor y ChatGPT** como apoyo (alternativas, seguridad, tests, UI y docs). Revisé cada sugerencia; las decisiones finales fueron mías según el alcance del challenge.
