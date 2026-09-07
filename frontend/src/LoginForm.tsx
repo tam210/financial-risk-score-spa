@@ -57,6 +57,12 @@ export function LoginForm({
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+
+    if (username.trim().length === 0) {
+      setError("Ingresa tu usuario.");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {

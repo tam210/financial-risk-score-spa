@@ -18,6 +18,10 @@ export async function login(
   username: string,
   password: string,
 ): Promise<LoginResult> {
+  if (username.trim().length === 0) {
+    return { ok: false, kind: "invalid_credentials" };
+  }
+
   let response: Response;
 
   try {
