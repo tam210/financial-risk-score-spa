@@ -4,6 +4,8 @@ import { JWT_ALGORITHM, getJwtSecret } from "./jwt-secret";
 import { authenticate, type AuthenticatedAccount } from "./mock-users";
 
 const JWT_EXPIRES_IN_SECONDS = 900;
+const MAX_USERNAME_LENGTH = 64;
+const MAX_PASSWORD_LENGTH = 128;
 
 type AccessTokenPayload =
   | { sub: string; role: "admin" }
@@ -38,11 +40,21 @@ function readLoginCredentials(
     return null;
   }
 
+  const trimmedUsername = username.trim();
+
+  if (trimmedUsername.length > MAX_USERNAME_LENGTH) {
+    return null;
+  }
+
   if (typeof password !== "string" || password.length === 0) {
     return null;
   }
 
-  return { username: username.trim(), password };
+  if (password.length > MAX_PASSWORD_LENGTH) {
+    return null;
+  }
+
+  return { username: trimmedUsername, password };
 }
 
 export function handleLogin(req: Request, res: Response): void {

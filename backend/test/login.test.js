@@ -97,6 +97,17 @@ describe("POST /login", () => {
     assert.deepEqual(body, { error: "Invalid request" });
   });
 
+  test("returns 400 for an oversized username", async () => {
+    const response = await postLogin({
+      username: "a".repeat(65),
+      password: "adminpass",
+    });
+    const body = await response.json();
+
+    assert.equal(response.status, 400);
+    assert.deepEqual(body, { error: "Invalid request" });
+  });
+
   test("returns 400 JSON without HTML or stack for malformed JSON", async () => {
     const response = await postLogin(undefined, '{"username":');
     const contentType = response.headers.get("content-type") ?? "";

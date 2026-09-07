@@ -24,6 +24,7 @@ describe("isPlausibleRut", () => {
     assert.equal(isPlausibleRut("12.345.678--5"), false);
     assert.equal(isPlausibleRut("123456789-5"), false);
     assert.equal(isPlausibleRut("12345678901"), false);
+    assert.equal(isPlausibleRut("12.345.678-5X"), false);
     assert.equal(isPlausibleRut("foo"), false);
     assert.equal(isPlausibleRut(""), false);
     assert.equal(isPlausibleRut("9"), false);

@@ -21,6 +21,9 @@ export function formatRut(rut: string): string {
   return `${withDots}-${verifier}`;
 }
 
+/** Chilean display max: 12.345.678-K */
+export const MAX_RUT_INPUT_LENGTH = 12;
+
 function hasChileanThousandGrouping(body: string): boolean {
   if (!body.includes(".")) {
     return false;
@@ -52,9 +55,17 @@ function hasChileanThousandGrouping(body: string): boolean {
 }
 
 export function isPlausibleRut(rut: string): boolean {
+  if (typeof rut !== "string") {
+    return false;
+  }
+
   const value = rut.trim().toUpperCase();
 
-  if (value.length === 0 || /\s/.test(value)) {
+  if (
+    value.length === 0 ||
+    value.length > MAX_RUT_INPUT_LENGTH ||
+    /\s/.test(value)
+  ) {
     return false;
   }
 

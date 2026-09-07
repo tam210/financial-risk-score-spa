@@ -101,6 +101,7 @@ export function LoginForm({
               type="text"
               autoComplete="username"
               placeholder="Ingresa tu usuario"
+              maxLength={64}
               value={username}
               onChange={(event) => setUsername(event.target.value)}
               disabled={isSubmitting}
@@ -116,6 +117,7 @@ export function LoginForm({
                 type={isPasswordVisible ? "text" : "password"}
                 autoComplete="current-password"
                 placeholder="Ingresa tu contraseña"
+                maxLength={128}
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 disabled={isSubmitting}
