@@ -3,6 +3,7 @@ import { login } from "./api";
 
 type LoginFormProps = {
   onAuthenticated: (token: string) => void;
+  notice?: string | null;
 };
 
 function EyeIcon() {
@@ -43,12 +44,15 @@ function EyeOffIcon() {
   );
 }
 
-export function LoginForm({ onAuthenticated }: LoginFormProps) {
+export function LoginForm({
+  onAuthenticated,
+  notice = null,
+}: LoginFormProps) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(notice);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
