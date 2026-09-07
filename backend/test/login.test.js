@@ -147,16 +147,17 @@ describe("JWT issued by POST /login", () => {
     assert.equal(admin.payload.exp - admin.payload.iat, 900);
     assert.equal(user.payload.exp - user.payload.iat, 900);
 
+    assert.equal(admin.payload.sub, "admin-1");
     assert.equal(admin.payload.role, "admin");
     assert.equal("rut" in admin.payload, false);
 
+    assert.equal(user.payload.sub, "user-1");
     assert.equal(user.payload.role, "user");
     assert.equal(user.payload.rut, "12345678-5");
 
     for (const payload of [admin.payload, user.payload]) {
       assert.equal("username" in payload, false);
       assert.equal("password" in payload, false);
-      assert.equal("sub" in payload, false);
     }
   });
 });

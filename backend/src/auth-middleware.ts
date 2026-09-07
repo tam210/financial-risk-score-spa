@@ -4,13 +4,21 @@ import { JWT_ALGORITHM, getJwtSecret } from "./jwt-secret";
 import { isPlausibleRut } from "./rut";
 
 export type AccessPrincipal =
-  | { role: "admin" }
-  | { role: "user"; rut: string };
+  | { sub: string; role: "admin" }
+  | { sub: string; role: "user"; rut: string };
 
 const jwtSecret = getJwtSecret();
 
 function parsePrincipal(payload: unknown): AccessPrincipal | null {
   if (payload === null || typeof payload !== "object" || Array.isArray(payload)) {
+    return null;
+  }
+
+  if (
+    !("sub" in payload) ||
+    typeof payload.sub !== "string" ||
+    payload.sub.trim().length === 0
+  ) {
     return null;
   }
 
@@ -23,7 +31,7 @@ function parsePrincipal(payload: unknown): AccessPrincipal | null {
       return null;
     }
 
-    return { role: "admin" };
+    return { sub: payload.sub, role: "admin" };
   }
 
   if (payload.role === "user") {
@@ -35,7 +43,7 @@ function parsePrincipal(payload: unknown): AccessPrincipal | null {
       return null;
     }
 
-    return { role: "user", rut: payload.rut };
+    return { sub: payload.sub, role: "user", rut: payload.rut };
   }
 
   return null;

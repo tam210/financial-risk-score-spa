@@ -6,8 +6,8 @@ import { authenticate, type AuthenticatedAccount } from "./mock-users";
 const JWT_EXPIRES_IN_SECONDS = 900;
 
 type AccessTokenPayload =
-  | { role: "admin" }
-  | { role: "user"; rut: string };
+  | { sub: string; role: "admin" }
+  | { sub: string; role: "user"; rut: string };
 
 const jwtSecret = getJwtSecret();
 
@@ -15,10 +15,10 @@ function buildAccessTokenPayload(
   account: AuthenticatedAccount,
 ): AccessTokenPayload {
   if (account.role === "admin") {
-    return { role: "admin" };
+    return { sub: account.id, role: "admin" };
   }
 
-  return { role: "user", rut: account.rut };
+  return { sub: account.id, role: "user", rut: account.rut };
 }
 
 function readLoginCredentials(

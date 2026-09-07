@@ -84,8 +84,34 @@ describe("GET /score/:rut", () => {
   });
 
   test("returns 401 for a signed token without exp", async () => {
+    const token = jwt.sign(
+      { sub: "admin-1", role: "admin" },
+      jwtSecret,
+      { algorithm: "HS256" },
+    );
+    const response = await getScore("99999999-9", token);
+    const body = await response.json();
+
+    assert.equal(response.status, 401);
+    assert.deepEqual(body, { error: "Unauthorized" });
+  });
+
+  test("returns 401 for a signed admin token without sub", async () => {
     const token = jwt.sign({ role: "admin" }, jwtSecret, {
       algorithm: "HS256",
+      expiresIn: 900,
+    });
+    const response = await getScore("99999999-9", token);
+    const body = await response.json();
+
+    assert.equal(response.status, 401);
+    assert.deepEqual(body, { error: "Unauthorized" });
+  });
+
+  test("returns 401 for a signed admin token with blank sub", async () => {
+    const token = jwt.sign({ sub: "   ", role: "admin" }, jwtSecret, {
+      algorithm: "HS256",
+      expiresIn: 900,
     });
     const response = await getScore("99999999-9", token);
     const body = await response.json();
@@ -133,10 +159,14 @@ describe("GET /score/:rut", () => {
   });
 
   test("returns 401 for an expired JWT", async () => {
-    const token = jwt.sign({ role: "admin" }, jwtSecret, {
-      algorithm: "HS256",
-      expiresIn: -10,
-    });
+    const token = jwt.sign(
+      { sub: "admin-1", role: "admin" },
+      jwtSecret,
+      {
+        algorithm: "HS256",
+        expiresIn: -10,
+      },
+    );
     const response = await getScore("99999999-9", token);
     const body = await response.json();
 
@@ -144,11 +174,15 @@ describe("GET /score/:rut", () => {
     assert.deepEqual(body, { error: "Unauthorized" });
   });
 
-  test("returns 401 for a signed token with invalid claims", async () => {
-    const token = jwt.sign({ role: "user" }, jwtSecret, {
-      algorithm: "HS256",
-      expiresIn: 900,
-    });
+  test("returns 401 for a user token without rut", async () => {
+    const token = jwt.sign(
+      { sub: "user-1", role: "user" },
+      jwtSecret,
+      {
+        algorithm: "HS256",
+        expiresIn: 900,
+      },
+    );
     const response = await getScore("12345678-5", token);
     const body = await response.json();
 
