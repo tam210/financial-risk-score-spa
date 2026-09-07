@@ -7,3 +7,8 @@ export function normalizeRut(rut: string): string {
 
   return `${compact.slice(0, -1)}-${compact.slice(-1)}`;
 }
+
+export function isPlausibleRut(rut: string): boolean {
+  const compact = rut.trim().toUpperCase().replace(/[.\s]/g, "").replace(/-/g, "");
+  return /^\d+[\dK]$/.test(compact);
+}

@@ -5,7 +5,9 @@ import express, {
   type Response,
 } from "express";
 import helmet from "helmet";
+import { requireAuth } from "./auth-middleware";
 import { handleLogin } from "./login";
+import { handleGetScore } from "./score-route";
 
 const frontendOrigin = process.env.FRONTEND_ORIGIN;
 
@@ -20,6 +22,7 @@ app.use(cors({ origin: frontendOrigin }));
 app.use(express.json({ limit: "16kb" }));
 
 app.post("/login", handleLogin);
+app.get("/score/:rut", requireAuth, handleGetScore);
 
 app.use(
   (err: unknown, _req: Request, res: Response, _next: NextFunction): void => {

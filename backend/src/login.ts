@@ -1,26 +1,13 @@
 import type { Request, Response } from "express";
 import jwt from "jsonwebtoken";
+import { JWT_ALGORITHM, getJwtSecret } from "./jwt-secret";
 import { authenticate, type AuthenticatedAccount } from "./mock-users";
 
-const JWT_ALGORITHM = "HS256" as const;
 const JWT_EXPIRES_IN_SECONDS = 900;
-const MIN_JWT_SECRET_BYTES = 32;
 
 type AccessTokenPayload =
   | { role: "admin" }
   | { role: "user"; rut: string };
-
-function getJwtSecret(): string {
-  const secret = process.env.JWT_SECRET;
-
-  if (!secret || Buffer.byteLength(secret, "utf8") < MIN_JWT_SECRET_BYTES) {
-    throw new Error(
-      `JWT_SECRET is required and must be at least ${MIN_JWT_SECRET_BYTES} UTF-8 bytes`,
-    );
-  }
-
-  return secret;
-}
 
 const jwtSecret = getJwtSecret();
 
